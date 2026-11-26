@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#ffd8d8">
+    <title>Frame Match</title>
+    <link rel="stylesheet" href="style1.css">
+</head>
+<body>
+    <header class="site-header">
+        <nav class="main-nav" aria-label="Main navigation">
+            <button class="nav-link active" type="button" data-section="homeSection">Home</button>
+            <button class="nav-link" type="button" data-section="scanSection">Face Scan</button>
+            <button class="nav-link" type="button" data-section="recommendationsSection">Recommendations</button>
+            <button class="nav-link" type="button" data-section="tryOnSection">Virtual Try-On</button>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Home -->
+        <section class="app-section home-section" id="homeSection">
+            <div class="home-copy">
+                <span class="eyebrow">WELCOME TO FRAME MATCH</span>
+                <h1>Find the frames<br><span>that match you.</span></h1>
+                <p class="lead">Discover your face shape and explore glasses styles selected to match your features.</p>
+                <button class="primary-button" id="startButton" type="button">Start Face Analysis <span aria-hidden="true">→</span></button>
+            </div>
+            <div class="home-art">
+                <img src="../الصور/welcomLogo.png" alt="Frame Match face and glasses illustration">
+                <p class="brand-script" dir="ltr">Frame Match</p>
+            </div>
+        </section>
+
+        <!-- Face Scan -->
+        <section class="app-section scan-section" id="scanSection" hidden>
+            <div class="section-heading">
+                <span class="eyebrow">STEP 01</span>
+                <h1>Face Shape Analysis</h1>
+                <p>Position your face in the camera frame and let Frame Match analyze your facial proportions.</p>
+            </div>
+            <div class="scan-instructions card-surface">
+                <div class="camera-icon" aria-hidden="true">
+                    <svg viewBox="0 0 64 48" role="img">
+                        <path d="M8 12h11l5-7h16l5 7h11a4 4 0 0 1 4 4v25a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V16a4 4 0 0 1 4-4Z" />
+                        <circle cx="32" cy="28" r="11" />
+                    </svg>
+                </div>
+                <h2>Ready to find your face shape?</h2>
+                <p>When you select the button, your browser will ask for permission to use the camera. Look straight ahead and keep your face inside the frame.</p>
+                <button class="primary-button" id="captureAnalyzeButton" type="button">Allow Camera &amp; Start Analysis</button>
+                <p class="privacy-note"><span aria-hidden="true">●</span> Your camera feed is processed on this device. No face photo is captured or uploaded.</p>
+            </div>
+        </section>
+
+        <!-- Camera Preview -->
+        <section class="app-section camera-preview-section" id="cameraPreviewSection" hidden>
+            <div class="section-heading compact-heading">
+                <span class="eyebrow">LIVE CAMERA</span>
+                <h1>Camera Preview</h1>
+                <p>Look at the camera and keep your face centered.</p>
+            </div>
+            <div class="camera-card card-surface">
+                <div class="camera-container">
+                    <video id="camera" autoplay playsinline muted></video>
+                    <canvas id="faceCanvas"></canvas>
+                    <div class="camera-placeholder" id="cameraPlaceholder">
+                        <div class="camera-icon" aria-hidden="true">
+                            <svg viewBox="0 0 64 48">
+                                <path d="M8 12h11l5-7h16l5 7h11a4 4 0 0 1 4 4v25a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V16a4 4 0 0 1 4-4Z" />
+                                <circle cx="32" cy="28" r="11" />
+                            </svg>
+                        </div>
+                        <p>Your camera preview will appear here.</p>
+                    </div>
+                </div>
+                <div class="camera-actions">
+                    <button class="primary-button" id="cameraButton" type="button">Open Camera</button>
+                    <button class="secondary-button" id="stopCameraButton" type="button" hidden>Stop Camera</button>
+                    <button class="text-button" id="viewResultsButton" type="button" hidden>View Analysis Results →</button>
+                </div>
+                <p class="camera-status" id="cameraStatus" role="status" aria-live="polite">Camera permission has not been requested yet.</p>
+                <p class="privacy-note"><span aria-hidden="true">●</span> Face measurements are calculated in your browser. No face photo is captured or sent to a server.</p>
+            </div>
+            <button class="back-link" type="button" data-section="scanSection">← Back to Face Scan</button>
+        </section>
+
+        <!-- Face Analysis Result -->
+        <section class="app-section result-section" id="resultSection" hidden>
+            <div class="section-heading compact-heading">
+                <span class="eyebrow">YOUR ANALYSIS</span>
+                <h1>Face Shape Analysis</h1>
+            </div>
+            <div class="result-card card-surface">
+                <p class="result-kicker">DETECTED FACE SHAPE</p>
+                <h2 id="faceShape">Waiting for analysis...</h2>
+                <p id="faceShapeDescription" class="result-description">Your face shape and proportions will appear here after analysis.</p>
+                <button class="primary-button" id="viewRecommendationsButton" type="button">View Recommended Glasses</button>
+            </div>
+            <details class="measurements-section card-surface">
+                <summary>View Face Measurements</summary>
+                <div class="measurements-grid">
+                    <div class="measurement-item"><span>Face Length</span><strong id="faceLength">--</strong></div>
+                    <div class="measurement-item"><span>Forehead Width</span><strong id="foreheadWidth">--</strong></div>
+                    <div class="measurement-item"><span>Cheekbone Width</span><strong id="cheekboneWidth">--</strong></div>
+                    <div class="measurement-item"><span>Jaw Width</span><strong id="jawWidth">--</strong></div>
+                </div>
+            </details>
+            <button class="back-link" type="button" data-section="cameraPreviewSection">← Back to Camera Preview</button>
+        </section>
+
+        <!-- Recommendations -->
+        <section class="app-section recommendations-section" id="recommendationsSection" hidden>
+            <div class="section-heading compact-heading">
+                <span class="eyebrow">MADE FOR YOUR FEATURES</span>
+                <h1>Recommended Glasses</h1>
+                <p>Personalized frames selected based on your analyzed face shape and proportions.</p>
+            </div>
+            <div class="recommendation-note" id="recommendationIntro">Analyze your face to see which frames are your best match.</div>
+            <div class="product-grid" id="glassesContainer">
+                <article class="product-card" data-glasses-card="cat-eye">
+                    <div class="product-image"><img src="../الصور/cat-eye1.png" alt="Cat eye glasses"></div>
+                    <h2>Soft Cat-Eye Frame</h2>
+                    <p>Highlights cheekbones</p>
+                    <span class="recommendation-label"></span>
+                    <button class="secondary-button try-glasses-button" type="button" data-glasses="cat-eye">Virtual Try-On</button>
+                </article>
+                <article class="product-card" data-glasses-card="square">
+                    <div class="product-image"><img src="../الصور/square1.png" alt="Square glasses"></div>
+                    <h2>Classic Rectangular Frame</h2>
+                    <p>Balanced oval fit</p>
+                    <span class="recommendation-label"></span>
+                    <button class="secondary-button try-glasses-button" type="button" data-glasses="square">Virtual Try-On</button>
+                </article>
+                <article class="product-card" data-glasses-card="round">
+                    <div class="product-image"><img src="../الصور/round1.png" alt="Round glasses"></div>
+                    <h2>Geometric Metal Frame</h2>
+                    <p>Lightweight modern lines</p>
+                    <span class="recommendation-label"></span>
+                    <button class="secondary-button try-glasses-button" type="button" data-glasses="round">Virtual Try-On</button>
+                </article>
+                <article class="product-card" data-glasses-card="oval">
+                    <div class="product-image"><img src="../الصور/oval1.png" alt="Oval glasses"></div>
+                    <h2>Soft Oval Frame</h2>
+                    <p>Soft and balanced contours</p>
+                    <span class="recommendation-label"></span>
+                    <button class="secondary-button try-glasses-button" type="button" data-glasses="oval">Virtual Try-On</button>
+                </article>
+            </div>
+        </section>
+
+        <!-- Virtual Try-On -->
+        <section class="app-section try-on-section" id="tryOnSection" hidden>
+            <div class="section-heading compact-heading">
+                <span class="eyebrow">FIND YOUR LOOK</span>
+                <h1>Virtual Try-On</h1>
+                <p>Choose a frame, then open the camera to see it on your face.</p>
+            </div>
+            <div class="try-on-content card-surface">
+                <div class="selected-frame-preview">
+                    <div class="product-image large-product-image">
+                        <img id="selectedGlassesImage" src="../الصور/cat-eye1.png" alt="Selected glasses">
+                    </div>
+                    <p class="result-kicker">SELECTED FRAME</p>
+                    <h2 id="selectedGlassesName">Cat Eye</h2>
+                    <p id="selectedGlassesDescription">Choose a frame to preview it on your face.</p>
+                    <button class="primary-button" id="tryCameraButton" type="button">Try Camera</button>
+                </div>
+                <div class="frame-picker">
+                    <h2>Choose Your Glasses</h2>
+                    <p>Select one of the available styles.</p>
+                    <div class="frame-picker-grid">
+                        <button class="frame-option selected" type="button" data-glasses="cat-eye" aria-pressed="true"><img src="../الصور/cat-eye1.png" alt=""><span>Cat Eye</span></button>
+                        <button class="frame-option" type="button" data-glasses="square" aria-pressed="false"><img src="../الصور/square1.png" alt=""><span>Square</span></button>
+                        <button class="frame-option" type="button" data-glasses="round" aria-pressed="false"><img src="../الصور/round1.png" alt=""><span>Round</span></button>
+                        <button class="frame-option" type="button" data-glasses="oval" aria-pressed="false"><img src="../الصور/oval1.png" alt=""><span>Oval</span></button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>©️ 2026 Frame Match. Find the frames that match you.</p>
+    </footer>
+
+    <script type="module" src="script1.js"></script>
+</body>
+</html>
