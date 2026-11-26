@@ -4,6 +4,18 @@ import {
 } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/vision_bundle.mjs";
 
 // ------------------------------------------------------------
+// API
+// ------------------------------------------------------------
+const API_URL = "http://localhost:8082/api";
+
+const faceShapeIds = {
+    Oval: 1,
+    Round: 2,
+    Square: 3,
+    Heart: 4
+};
+
+// ------------------------------------------------------------
 // Page elements
 // ------------------------------------------------------------
 const sections = document.querySelectorAll(".app-section");
@@ -43,6 +55,9 @@ let isCameraStarting = false;
 let lastDetectedShape = null;
 let hasValidAnalysis = false;
 
+let faceShapesFromAPI = [];
+let framesFromAPI = [];
+
 // The live video is analyzed locally in the browser.
 // This code does not capture, save, or upload face photos.
 
@@ -51,21 +66,25 @@ let hasValidAnalysis = false;
 // ------------------------------------------------------------
 const glasses = {
     "cat-eye": {
+        frameId: 3,
         name: "Cat Eye",
         image: "../الصور/cat-eye1.png",
         description: "A lifted shape that highlights the cheekbones."
     },
     "square": {
+        frameId: 1,
         name: "Square",
         image: "../الصور/square1.png",
         description: "A structured frame with clean, balanced lines."
     },
     "round": {
+        frameId: 2,
         name: "Round",
         image: "../الصور/round1.png",
         description: "A soft rounded frame for a gentle contrast."
     },
     "oval": {
+        frameId: 4,
         name: "Oval",
         image: "../الصور/oval1.png",
         description: "A balanced frame with smooth, curved edges."
@@ -88,26 +107,47 @@ let selectedGlasses = glasses["cat-eye"];
 // ------------------------------------------------------------
 const recommendations = {
     Oval: {
-        best: "Cat Eye",
-        suitable: ["Cat Eye", "Square", "Round", "Oval"],
+        best: "cat-eye",
         description: "Your face has balanced proportions with gently rounded contours. Geometric, rectangular, and classic frames can complement your features."
     },
     Round: {
-        best: "Square",
-        suitable: ["Square", "Cat Eye"],
+        best: "square",
         description: "Your face has soft, rounded contours. Angular and lifted frames can add definition and balance."
     },
     Square: {
-        best: "Round",
-        suitable: ["Round", "Oval"],
+        best: "round",
         description: "Your face has a defined jawline and balanced width. Rounded and oval frames can soften angular features."
     },
     Heart: {
-        best: "Oval",
-        suitable: ["Oval", "Round", "Cat Eye"],
+        best: "oval",
         description: "Your face is wider around the forehead and gently narrows toward the chin. Oval and rounded frames can create a balanced look."
     }
 };
+
+// ------------------------------------------------------------
+// Load data from backend
+// ------------------------------------------------------------
+async function loadBackendData() {
+    try {
+        const [facesResponse, framesResponse] = await Promise.all([
+            fetch(`${API_URL}/faceshapes`),
+            fetch(`${API_URL}/frames`)
+        ]);
+
+        if (!facesResponse.ok || !framesResponse.ok) {
+            throw new Error("Unable to load backend data.");
+        }
+
+        faceShapesFromAPI = await facesResponse.json();
+        framesFromAPI = await framesResponse.json();
+
+        console.log("Face shapes loaded:", faceShapesFromAPI);
+        console.log("Glasses frames loaded:", framesFromAPI);
+
+    } catch (error) {
+        console.error("Backend connection error:", error);
+    }
+}
 
 // ------------------------------------------------------------
 // Page navigation
@@ -118,7 +158,6 @@ function isCameraPreviewVisible() {
 }
 
 function showSection(sectionId) {
-    // The camera must only stay on inside the camera preview page.
     if (sectionId !== "cameraPreviewSection") {
         stopCamera();
     }
@@ -229,7 +268,7 @@ document.querySelectorAll(".try-glasses-button").forEach(button => {
 });
 
 // ------------------------------------------------------------
-// Recommendations
+// Recommendations from backend
 // ------------------------------------------------------------
 function clearRecommendations() {
     recommendationIntro.textContent =
@@ -243,39 +282,74 @@ function clearRecommendations() {
     });
 }
 
-function showRecommendations(shape) {
-    // Do not show personalized recommendations without a valid analysis.
+async function showRecommendations(shape) {
     if (!hasValidAnalysis) {
+        clearRecommendations();
+        return;
+    }
+
+    const shapeId = faceShapeIds[shape];
+
+    if (!shapeId) {
         clearRecommendations();
         return;
     }
 
     const result = recommendations[shape];
 
-    if (!result) {
-        clearRecommendations();
-        return;
+    try {
+        const response = await fetch(
+            `${API_URL}/face-analysis/recommend/${shapeId}`
+        );
+
+        if (!response.ok) {
+            throw new Error("Unable to load recommendations.");
+        }
+
+        const recommendedFrames = await response.json();
+
+        const recommendedIds = recommendedFrames.map(
+            frame => frame.frameId
+        );
+
+        const bestGlass = glasses[result.best];
+        const bestFrameId = bestGlass.frameId;
+
+        recommendationIntro.textContent =
+            `Your face shape is ${shape}. ${result.description}`;
+
+        document.querySelectorAll("[data-glasses-card]").forEach(card => {
+            const glassId = card.dataset.glassesCard;
+            const glass = glasses[glassId];
+
+            if (!glass) return;
+
+            const label = card.querySelector(".recommendation-label");
+
+            const isBest = glassId === result.best;
+            const isSuitable = recommendedIds.includes(glass.frameId);
+
+            label.textContent = isBest
+                ? "★ Best Match"
+                : isSuitable
+                    ? "Suitable for you"
+                    : "Explore this style";
+
+            card.classList.toggle("is-best", isBest);
+        });
+
+    } catch (error) {
+        console.error("Recommendations error:", error);
+
+        recommendationIntro.textContent =
+            "Unable to load recommendations. Please make sure the backend is running.";
+
+        document.querySelectorAll("[data-glasses-card]").forEach(card => {
+            const label = card.querySelector(".recommendation-label");
+            label.textContent = "";
+            card.classList.remove("is-best");
+        });
     }
-
-    recommendationIntro.textContent =
-        `Your face shape is ${shape}. ${result.description}`;
-
-    document.querySelectorAll("[data-glasses-card]").forEach(card => {
-        const glassId = card.dataset.glassesCard;
-        const glassName = glasses[glassId].name;
-        const label = card.querySelector(".recommendation-label");
-
-        const isSuitable = result.suitable.includes(glassName);
-        const isBest = glassName === result.best;
-
-        label.textContent = isBest
-            ? "★ Best Match"
-            : isSuitable
-                ? "Suitable for you"
-                : "Explore this style";
-
-        card.classList.toggle("is-best", isBest);
-    });
 }
 
 function updateShapeResult(shape) {
@@ -347,7 +421,6 @@ function calculateDistance(point1, point2) {
 }
 
 function determineFaceShape(faceLength, forehead, cheeks, jaw) {
-    // Reject missing, zero, negative, or invalid measurements.
     const values = [faceLength, forehead, cheeks, jaw];
 
     if (!values.every(value => Number.isFinite(value) && value > 0)) {
@@ -366,7 +439,6 @@ function determineFaceShape(faceLength, forehead, cheeks, jaw) {
         return null;
     }
 
-    // Reject unrealistic measurement ratios.
     if (
         lengthRatio < 0.5 || lengthRatio > 3 ||
         foreheadRatio < 0.2 || foreheadRatio > 2.5 ||
@@ -391,7 +463,6 @@ function determineFaceShape(faceLength, forehead, cheeks, jaw) {
 }
 
 function calculateFaceMeasurements(landmarks) {
-    // Check that the required face points exist before using them.
     if (!hasRequiredLandmarks(landmarks)) {
         return false;
     }
@@ -412,7 +483,6 @@ function calculateFaceMeasurements(landmarks) {
         jawWidth
     );
 
-    // Do not display or use invalid measurements.
     if (!shape) {
         return false;
     }
@@ -559,7 +629,6 @@ stopCameraButton.addEventListener("click", stopCamera);
 
 cameraButton.addEventListener("click", startCamera);
 
-// Stop the camera if the user closes or leaves the page.
 window.addEventListener("pagehide", stopCamera);
 
 async function startCamera() {
@@ -588,8 +657,6 @@ async function startCamera() {
             audio: false
         });
 
-        // If the user left the preview while the permission request
-        // was open, stop the newly opened camera immediately.
         if (!isCameraPreviewVisible()) {
             newStream.getTracks().forEach(track => track.stop());
             return;
@@ -600,8 +667,6 @@ async function startCamera() {
 
         await camera.play();
 
-        // Check again in case the user navigated away while the
-        // camera or video was starting.
         if (!isCameraPreviewVisible()) {
             stopCamera();
             return;
@@ -624,7 +689,6 @@ async function startCamera() {
             });
         }
 
-        // Do not continue if the user has left the preview page.
         if (!isCameraPreviewVisible() || !cameraStream) {
             stopCamera();
             return;
@@ -775,3 +839,4 @@ function detectFace() {
 // ------------------------------------------------------------
 clearRecommendations();
 selectGlasses("cat-eye");
+loadBackendData();

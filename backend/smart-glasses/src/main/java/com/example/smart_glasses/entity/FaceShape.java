@@ -13,7 +13,31 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class FaceShape {
 
-    @Id
+    public Integer getShapeId() {
+		return shapeId;
+	}
+
+	public void setShapeId(Integer shapeId) {
+		this.shapeId = shapeId;
+	}
+
+	public String getShapeName() {
+		return shapeName;
+	}
+
+	public void setShapeName(String shapeName) {
+		this.shapeName = shapeName;
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
+	}
+
+	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "shape_id")
     private Integer shapeId;
